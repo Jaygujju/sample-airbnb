@@ -1,7 +1,72 @@
-const mongoose = require("mongoose");
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose');
 
-const listingSchema = new Schema({
+// Define the schema for the reviews
+const reviewSchema = new mongoose.Schema({
+    _id: String,
+    date: Date,
+    listing_id: String,
+    reviewer_id: String,
+    reviewer_name: String,
+    comments: String
+}, { _id: false });
+
+// Define the schema for the address
+const addressSchema = new mongoose.Schema({
+    street: String,
+    suburb: String,
+    government_area: String,
+    market: String,
+    country: String,
+    country_code: String,
+    location: {
+        type: {
+            type: String,
+            enum: ['Point'],
+            default: 'Point'
+        },
+        coordinates: [Number],
+        is_location_exact: Boolean
+    }
+}, { _id: false });
+
+// Define the schema for the host
+const hostSchema = new mongoose.Schema({
+    host_id: String,
+    host_url: String,
+    host_name: String,
+    host_location: String,
+    host_about: String,
+    host_response_time: String,
+    host_thumbnail_url: String,
+    host_picture_url: String,
+    host_neighbourhood: String,
+    host_response_rate: Number,
+    host_is_superhost: Boolean,
+    host_has_profile_pic: Boolean,
+    host_identity_verified: Boolean,
+    host_listings_count: Number,
+    host_total_listings_count: Number,
+    host_verifications: [String]
+}, { _id: false });
+
+// Define the schema for availability
+const availabilitySchema = new mongoose.Schema({
+    availability_30: Number,
+    availability_60: Number,
+    availability_90: Number,
+    availability_365: Number
+}, { _id: false });
+
+// Define the schema for the images
+const imagesSchema = new mongoose.Schema({
+    thumbnail_url: String,
+    medium_url: String,
+    picture_url: String,
+    xl_picture_url: String
+}, { _id: false });
+
+// Main listing schema
+const listingSchema = new mongoose.Schema({
     _id: String,
     listing_url: String,
     name: String,
@@ -11,7 +76,7 @@ const listingSchema = new Schema({
     neighborhood_overview: String,
     notes: String,
     transit: String,
-    access: String,  
+    access: String,
     interaction: String,
     house_rules: String,
     property_type: String,
@@ -28,56 +93,17 @@ const listingSchema = new Schema({
     bedrooms: Number,
     beds: Number,
     number_of_reviews: Number,
-    bathrooms: Number,
+    bathrooms: mongoose.Schema.Types.Mixed, // Can be number or decimal
     amenities: [String],
-    price: Number,
-    security_deposit: Number,
-    cleaning_fee: Number,
-    extra_people: Number,
-    guests_included: Number,
-    images: {
-        thumbnail_url: String,
-        medium_url: String,
-        picture_url: String,
-        xl_picture_url: String
-    },
-    host: {
-        host_id: String,
-        host_url: String,
-        host_name: String,
-        host_location: String,
-        host_about: String,
-        host_response_time: String,
-        host_thumbnail_url: String,
-        host_picture_url: String,
-        host_neighbourhood: String,
-        host_response_rate: Number,
-        host_is_superhost: Boolean,
-        host_has_profile_pic: Boolean,
-        host_identity_verified: Boolean,
-        host_listings_count: Number,
-        host_total_listings_count: Number,
-        host_verifications: [String]
-    },
-    address: {
-        street: String,
-        suburb: String,
-        government_area: String,
-        market: String,
-        country: String,
-        country_code: String,
-        location: {
-            type: String,
-            coordinates: [Number],
-            is_location_exact: Boolean
-        }
-    },
-    availability: {
-        availability_30: Number,
-        availability_60: Number,
-        availability_90: Number,
-        availability_365: Number
-    },
+    price: mongoose.Schema.Types.Mixed, // Can be number or decimal
+    security_deposit: mongoose.Schema.Types.Mixed,
+    cleaning_fee: mongoose.Schema.Types.Mixed,
+    extra_people: mongoose.Schema.Types.Mixed,
+    guests_included: mongoose.Schema.Types.Mixed,
+    images: imagesSchema,
+    host: hostSchema,
+    address: addressSchema,
+    availability: availabilitySchema,
     review_scores: {
         review_scores_accuracy: Number,
         review_scores_cleanliness: Number,
@@ -87,14 +113,13 @@ const listingSchema = new Schema({
         review_scores_value: Number,
         review_scores_rating: Number
     },
-    reviews: [{
-        _id: String,
-        date: Date,
-        listing_id: String,
-        reviewer_id: String,
-        reviewer_name: String,
-        comments: String
-    }]
+    reviews: [reviewSchema]
+}, { 
+    collection: 'listingsAndReviews',
+    versionKey: false
 });
 
-module.exports = listingSchema;
+// Create and export the model
+const Listing = mongoose.model('Listing', listingSchema);
+
+module.exports = Listing;
