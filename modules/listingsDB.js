@@ -1,90 +1,100 @@
-const mongoose = require("mongoose");
-const listingSchema = require("./listingSchema.js");
+const mongoose = require('mongoose');
+const Listing = require('./listingSchema.js');
 
-module.exports = class ListingsDB {
+class ListingsDB {
     constructor() {
-        // We don't have a "Listing" object until initialize() is complete
         this.Listing = null;
     }
 
-    // This function will:
-    // - Connect to the MongoDB server
-    // - Initialize the "Listing" model with the "listingsAndReviews" collection
-    initialize(connectionString) {
-        return new Promise((resolve, reject) => {
-            let db = mongoose.createConnection(connectionString);
-            
-            db.once('error', (err) => {
-                reject(err);
+    async initialize(connectionString) {
+        try {
+            await mongoose.connect(connectionString, {
+                useNewUrlParser: true,
+                useUnifiedTopology: true
             });
             
-            db.once('open', () => {
-                this.Listing = db.model("listingsAndReviews", listingSchema);
-                resolve();
-            });
-        });
+            console.log("Connected to MongoDB successfully");
+            this.Listing = Listing;
+            return Promise.resolve();
+        } catch (error) {
+            console.error("Failed to connect to MongoDB:", error);
+            return Promise.reject(error);
+        }
     }
 
-    // Create a new listing in the collection
-    addNewListing(data) {
-        return new Promise((resolve, reject) => {
-            let newListing = new this.Listing(data);
-            newListing.save().then(() => {
-                resolve(newListing);
-            }).catch(err => {
-                reject(err);
-            });
-        });
+    async addNewListing(data) {
+        try {
+            const newListing = new this.Listing(data);
+            const savedListing = await newListing.save();
+            return savedListing;
+        } catch (error) {
+            throw new Error(`Error adding new listing: ${error.message}`);
+        }
     }
 
-    // Return an array of all listings for a specific page, sorted by number_of_reviews
-    // Optional "name" parameter to filter results
-    getAllListings(page, perPage, name) {
-        return new Promise((resolve, reject) => {
-            let findBy = name != null && name != '' ? { "name": new RegExp(name, 'i') } : {};
-
-            if (+page && +perPage) {
-                this.Listing.find(findBy).sort({ number_of_reviews: -1 }).limit(+perPage).skip((+page - 1) * +perPage).exec().then(listings => {
-                    resolve(listings);
-                }).catch(err => {
-                    reject(err);
-                });
-            } else {
-                reject(new Error('page and perPage query parameters must be valid numbers'));
+    async getAllListings(page, perPage, name) {
+        try {
+            let query = {};
+            
+            // If name parameter is provided, filter by name (case-insensitive)
+            if (name && name.trim() !== '') {
+                query.name = { $regex: name, $options: 'i' };
             }
-        });
+
+            const skip = (page - 1) * perPage;
+            
+            const listings = await this.Listing
+                .find(query)
+                .sort({ number_of_reviews: 1 }) // Sort by number_of_reviews ascending
+                .skip(skip)
+                .limit(perPage)
+                .lean(); // Use lean() for better performance
+
+            return listings;
+        } catch (error) {
+            throw new Error(`Error getting listings: ${error.message}`);
+        }
     }
 
-    // Return a single listing object whose "_id" matches the "Id" parameter
-    getListingById(Id) {
-        return new Promise((resolve, reject) => {
-            this.Listing.findById(Id).exec().then(listing => {
-                resolve(listing);
-            }).catch(err => {
-                reject(err);
-            });
-        });
+    async getListingById(id) {
+        try {
+            const listing = await this.Listing.findById(id);
+            return listing;
+        } catch (error) {
+            if (error.name === 'CastError') {
+                throw new Error('Invalid listing ID format');
+            }
+            throw new Error(`Error getting listing by ID: ${error.message}`);
+        }
     }
 
-    // Update an existing listing whose "_id" matches the "Id" parameter
-    updateListingById(data, Id) {
-        return new Promise((resolve, reject) => {
-            this.Listing.updateOne({ _id: Id }, { $set: data }).exec().then(result => {
-                resolve(result.modifiedCount > 0 ? result : null);
-            }).catch(err => {
-                reject(err);
-            });
-        });
+    async updateListingById(data, id) {
+        try {
+            const updatedListing = await this.Listing.findByIdAndUpdate(
+                id, 
+                data, 
+                { new: true, runValidators: true }
+            );
+            return updatedListing;
+        } catch (error) {
+            if (error.name === 'CastError') {
+                throw new Error('Invalid listing ID format');
+            }
+            throw new Error(`Error updating listing: ${error.message}`);
+        }
     }
 
-    // Delete an existing listing whose "_id" matches the "Id" parameter
-    deleteListingById(Id) {
-        return new Promise((resolve, reject) => {
-            this.Listing.deleteOne({ _id: Id }).exec().then(result => {
-                resolve(result.deletedCount > 0 ? result : null);
-            }).catch(err => {
-                reject(err);
-            });
-        });
+    async deleteListingById(id) {
+        try {
+            const deletedListing = await this.Listing.findByIdAndDelete(id);
+            return deletedListing;
+        } catch (error) {
+            if (error.name === 'CastError') {
+                throw new Error('Invalid listing ID format');
+            }
+            throw new Error(`Error deleting listing: ${error.message}`);
+        }
     }
-};
+}
+
+module.exports = ListingsDB;
