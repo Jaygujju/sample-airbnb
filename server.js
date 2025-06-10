@@ -1,16 +1,14 @@
 /*********************************************************************************
-* WEB422 � Assignment 1
+* WEB422 – Assignment 1
 *
 * I declare that this assignment is my own work in accordance with Seneca's
 * Academic Integrity Policy:
 *
 * https://www.senecapolytechnic.ca/about/policies/academic-integrity-policy.html
 *
-* Name: Jay Nitinkumar Patel 
-* Student ID: 129887238 
-* Date: 22nd may 2025
+* Name: ______________________ Student ID: ______________ Date: ______________
 *
-* Published URL: https://web422-assignment1-dusky.vercel.app
+* Published URL: ___________________________________________________________
 *
 *********************************************************************************/
 
@@ -18,7 +16,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-const ListingsDB = require("./listingsDB.js");
+const ListingsDB = require("./modules/listingsDB.js");
 const db = new ListingsDB();
 
 const app = express();
@@ -49,7 +47,7 @@ app.get('/api/listings', async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const perPage = parseInt(req.query.perPage) || 5;
         const name = req.query.name || '';
-
+        
         const listings = await db.getAllListings(page, perPage, name);
         res.json(listings);
     } catch (error) {
