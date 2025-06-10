@@ -1,5 +1,5 @@
-/*********************************************************************************
-* WEB422 – Assignment 1
+/*******************************************************************************
+* * WEB422 – Assignment 1
 *
 * I declare that this assignment is my own work in accordance with Seneca's
 * Academic Integrity Policy:
@@ -10,7 +10,7 @@
 *
 * Published URL: ___________________________________________________________
 *
-*********************************************************************************/
+********************************************************************************/
 
 const express = require('express');
 const cors = require('cors');
@@ -26,7 +26,7 @@ const HTTP_PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// Basic route to test server
+// Basic route
 app.get('/', (req, res) => {
     res.json({ message: "API Listening" });
 });
@@ -45,7 +45,7 @@ app.post('/api/listings', async (req, res) => {
 app.get('/api/listings', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const perPage = parseInt(req.query.perPage) || 5;
+        const perPage = parseInt(req.query.perPage) || 10;
         const name = req.query.name || '';
         
         const listings = await db.getAllListings(page, perPage, name);
@@ -59,11 +59,10 @@ app.get('/api/listings', async (req, res) => {
 app.get('/api/listings/:id', async (req, res) => {
     try {
         const listing = await db.getListingById(req.params.id);
-        if (listing) {
-            res.json(listing);
-        } else {
-            res.status(404).json({ error: "Listing not found" });
+        if (!listing) {
+            return res.status(404).json({ error: "Listing not found" });
         }
+        res.json(listing);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -72,12 +71,11 @@ app.get('/api/listings/:id', async (req, res) => {
 // PUT /api/listings/:id - Update a specific listing
 app.put('/api/listings/:id', async (req, res) => {
     try {
-        const updated = await db.updateListingById(req.body, req.params.id);
-        if (updated) {
-            res.json({ message: "Listing updated successfully" });
-        } else {
-            res.status(404).json({ error: "Listing not found" });
+        const result = await db.updateListingById(req.body, req.params.id);
+        if (!result) {
+            return res.status(404).json({ error: "Listing not found" });
         }
+        res.json({ message: "Listing updated successfully" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -86,15 +84,19 @@ app.put('/api/listings/:id', async (req, res) => {
 // DELETE /api/listings/:id - Delete a specific listing
 app.delete('/api/listings/:id', async (req, res) => {
     try {
-        const deleted = await db.deleteListingById(req.params.id);
-        if (deleted) {
-            res.status(204).send();
-        } else {
-            res.status(404).json({ error: "Listing not found" });
+        const result = await db.deleteListingById(req.params.id);
+        if (!result) {
+            return res.status(404).json({ error: "Listing not found" });
         }
+        res.status(204).send();
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: "Route not found" });
 });
 
 // Initialize database connection and start server
