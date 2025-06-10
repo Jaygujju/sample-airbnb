@@ -93,9 +93,9 @@ const listingSchema = new mongoose.Schema({
     bedrooms: Number,
     beds: Number,
     number_of_reviews: Number,
-    bathrooms: mongoose.Schema.Types.Mixed, // Can be number or decimal
+    bathrooms: mongoose.Schema.Types.Mixed,
     amenities: [String],
-    price: mongoose.Schema.Types.Mixed, // Can be number or decimal
+    price: mongoose.Schema.Types.Mixed,
     security_deposit: mongoose.Schema.Types.Mixed,
     cleaning_fee: mongoose.Schema.Types.Mixed,
     extra_people: mongoose.Schema.Types.Mixed,
